@@ -122,5 +122,54 @@ public class Hackathon {
         g1.addSavings(1200);
         System.out.println("\n----- GOAL AFTER FULLY SAVED -----");
         g1.displayDetails();
+
+        // ============================================================
+        // 12. Test FinanceManager: the full workflow through one manager
+        // ============================================================
+        FinanceManager fm = new FinanceManager();
+
+        // Admin sets up categories through the manager
+        fm.addCategory("Food");
+        fm.addCategory("Transport");
+        fm.addCategory("Shopping");
+
+        System.out.println("\n----- FINANCE MANAGER TEST -----");
+
+        // Add income (validated)
+        Income salary = new Income("01/11/2026", "Part-time salary", 1000.00, "Cafe job");
+        System.out.println("Add income RM1000: " + fm.addIncome(salary));
+        System.out.println("Add income RM-50 (invalid): " + fm.addIncome(new Income("01/11/2026", "Bad", -50, "Test")));
+
+        // Add expenses (category must be valid)
+        System.out.println("Add expense Food RM250: " + fm.addExpense(new Expense("05/11/2026", "Groceries", 250.00, "Food")));
+        System.out.println("Add expense with INVALID category: " + fm.addExpense(new Expense("05/11/2026", "Ticket", 30.00, "Holiday")));
+
+        // Search expense by keyword
+        Expense found = fm.searchExpenseByDescription("grocer");
+        System.out.println("Search 'grocer' found: " + found.getDescription() + " RM" + found.getAmount());
+
+        // Update expense amount
+        System.out.println("Update expense to RM300: " + fm.updateExpenseAmount(0, 300.00));
+
+        // Set budget AFTER expense existed: budget shows current spending
+        fm.setBudget("Food", 400);
+        System.out.println("\nFood budget status:");
+        fm.findBudget("Food").displayDetails();
+
+        // Savings goal through the manager
+        fm.addGoal(new SavingsGoal("Emergency fund", 1000));
+        System.out.println("\nAdd RM200 to Emergency fund: " + fm.addToGoal("Emergency fund", 200));
+
+        // Totals and balance (calculated from real records)
+        System.out.println("\n----- SUMMARY -----");
+        System.out.println("Total income: RM" + fm.getTotalIncome());
+        System.out.println("Total expenses: RM" + fm.getTotalExpenses());
+        System.out.println("Balance: RM" + fm.getBalance());
+        System.out.println("Total saved in goals: RM" + fm.getTotalSaved());
+
+        // Delete the expense, budget and totals must update
+        System.out.println("\nDelete expense: " + fm.deleteExpense(0));
+        System.out.println("After delete - total expenses: RM" + fm.getTotalExpenses()
+                + ", Food budget spent: RM" + fm.findBudget("Food").getSpent());
     }
 }
