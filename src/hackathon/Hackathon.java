@@ -48,5 +48,44 @@ public class Hackathon {
             records[i].displayDetails();
             System.out.println();
         }
+
+        // 6. Test the User class: create a user and check login
+        User u1 = new User("ali", "pass123", "Ali bin Ahmad");
+
+        System.out.println("----- USER -----");
+        u1.displayDetails();
+
+        System.out.println("\nLogin with wrong password: " + u1.login("wrong"));
+        System.out.println("Login with correct password: " + u1.login("pass123"));
+
+        // 7. Test the Admin class: it IS-A User, plus category management
+        Admin a1 = new Admin("admin1", "adminpw", "System Administrator");
+
+        System.out.println("\n----- ADMIN -----");
+        a1.displayDetails();
+
+        String[] categories = new String[10];
+        int categoryCount = 0;
+
+        if (a1.addCategory(categories, categoryCount, "Food")) {
+            categoryCount++;
+        }
+        a1.addCategory(categories, categoryCount, "Transport");
+        categoryCount++;
+        a1.addCategory(categories, categoryCount, "Shopping");
+        categoryCount++;
+
+        a1.viewCategories(categories, categoryCount);
+
+        // 8. Polymorphism again: an Admin can be stored as a User,
+        //    and the Admin version of displayDetails() runs
+        User[] people = new User[2];
+        people[0] = u1;
+        people[1] = a1;
+
+        System.out.println("\n----- ALL USERS (polymorphism) -----");
+        for (int i = 0; i < people.length; i++) {
+            people[i].displayDetails();
+        }
     }
 }
