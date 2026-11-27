@@ -243,6 +243,11 @@ public class FinanceManager {
         if (categoryCount >= categories.length) {
             return false;
         }
+        // Business rule: no duplicate categories (loading may offer
+        // the same category twice - from categories.txt and budgets.txt)
+        if (isValidCategory(name)) {
+            return false;
+        }
         categories[categoryCount] = new Category(name);
         categoryCount++;
         return true;

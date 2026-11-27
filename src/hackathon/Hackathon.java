@@ -205,5 +205,16 @@ public class Hackathon {
         Budget loadedBudget = restored.findBudget("Food");
         System.out.println("\nLoaded Food budget:");
         loadedBudget.displayDetails();
+
+        // ============================================================
+        // 14. Test ReportGenerator: reports on the restored data
+        // ============================================================
+        System.out.println("\n----- REPORT GENERATOR TEST -----");
+        ReportGenerator report = new ReportGenerator(restored);
+
+        report.showTotals();
+        report.showExpenseBreakdown();
+        report.showMonthlySummary();
+        report.saveReportToFile();
     }
 }
