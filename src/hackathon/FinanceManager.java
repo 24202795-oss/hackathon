@@ -199,6 +199,17 @@ public class FinanceManager {
         return null;
     }
 
+    // Used by FileManager when loading: restores a budget with its
+    // already-spent amount, without triggering the backfill logic
+    public boolean restoreBudget(Budget budget) {
+        if (budget == null || budgetCount >= budgets.length) {
+            return false;
+        }
+        budgets[budgetCount] = budget;
+        budgetCount++;
+        return true;
+    }
+
     // ===== SAVINGS GOAL operations =====
 
     // Business rule: target must be greater than RM0

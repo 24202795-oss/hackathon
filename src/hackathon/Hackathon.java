@@ -171,5 +171,39 @@ public class Hackathon {
         System.out.println("\nDelete expense: " + fm.deleteExpense(0));
         System.out.println("After delete - total expenses: RM" + fm.getTotalExpenses()
                 + ", Food budget spent: RM" + fm.findBudget("Food").getSpent());
+
+        // ============================================================
+        // 13. Test FileManager: save everything, then load into a
+        //     FRESH manager to simulate a program restart
+        // ============================================================
+        // Set up data in a manager: categories, income, expenses, budget, goal
+        FinanceManager original = new FinanceManager();
+        original.addCategory("Food");
+        original.addCategory("Transport");
+        original.addIncome(new Income("01/12/2026", "Allowance", 1000.00, "Parents"));
+        original.addExpense(new Expense("05/12/2026", "Lunch", 15.00, "Food"));
+        original.addExpense(new Expense("06/12/2026", "Bus ticket", 3.00, "Transport"));
+        original.setBudget("Food", 300);
+
+        FileManager fileMgr = new FileManager();
+        System.out.println("\n----- FILE MANAGER TEST -----");
+        fileMgr.saveAll(original);
+        System.out.println("Data saved to .txt files.");
+
+        // Simulate a restart: brand new manager, load from the files
+        FinanceManager restored = new FinanceManager();
+        fileMgr.loadAll(restored);
+
+        System.out.println("\nAfter load (fresh manager):");
+        System.out.println("Income records: " + restored.getIncomeCount());
+        System.out.println("Expense records: " + restored.getExpenseCount());
+        System.out.println("Budgets: " + restored.getBudgetCount());
+        System.out.println("Total income: RM" + restored.getTotalIncome());
+        System.out.println("Total expenses: RM" + restored.getTotalExpenses());
+        System.out.println("Balance: RM" + restored.getBalance());
+
+        Budget loadedBudget = restored.findBudget("Food");
+        System.out.println("\nLoaded Food budget:");
+        loadedBudget.displayDetails();
     }
 }
