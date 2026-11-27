@@ -1,4 +1,3 @@
 ali|1234|Ali bin Ahmad|user
 admin|admin|System Administrator|admin
-sara|sara123|Sara Lim|user
-2|bob|bob123|user
+tester|test123|Test User|user

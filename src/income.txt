@@ -1,1 +1,1 @@
-ali|01/12/2026|Salary|2000.0|Company
+tester|01/01/2026|Allowance|1500.0|Parents

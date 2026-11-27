@@ -1,2 +1,4 @@
 Food
 Transport
+Shopping
+Entertainment

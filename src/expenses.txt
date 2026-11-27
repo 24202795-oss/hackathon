@@ -1,1 +1,3 @@
-ali|05/12/2026|Groceries|250.0|Food
+tester|04/01/2026|Big buy|100.0|Food
+tester|05/01/2026|Extra|200.0|Food
+tester|06/01/2026|Snack|5.0|Food
