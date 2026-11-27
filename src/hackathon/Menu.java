@@ -17,6 +17,7 @@ public class Menu {
     private FinanceManager fm;
     private FileManager fileMgr;
     private ReportGenerator reports;
+    private AHelper ahelper;       // the AI advisor
     private UserStore userStore;   // all registered accounts
     private User currentUser;      // the user who is logged in
 
@@ -27,6 +28,7 @@ public class Menu {
         this.fileMgr = fileMgr;
         this.userStore = userStore;
         this.reports = new ReportGenerator(fm);
+        this.ahelper = new AHelper(fm);
         this.currentUser = null;
     }
 
@@ -135,10 +137,11 @@ public class Menu {
             System.out.println("3. Expense Management");
             System.out.println("4. Budget Management");
             System.out.println("5. Savings Goals");
-            System.out.println("6. Financial Reports");
-            System.out.println("7. Admin Menu (categories & users)");
-            System.out.println("8. Save Data");
-            System.out.println("9. Exit");
+            System.out.println("6. Ask AHelper (AI Advisor)");
+            System.out.println("7. Financial Reports");
+            System.out.println("8. Admin Menu (categories & users)");
+            System.out.println("9. Save Data");
+            System.out.println("10. Exit");
 
             choice = readInt("Enter your choice: ");
 
@@ -159,16 +162,19 @@ public class Menu {
                     savingsMenu();
                     break;
                 case 6:
-                    reportsMenu();
+                    ahelperMenu();
                     break;
                 case 7:
-                    adminMenu();
+                    reportsMenu();
                     break;
                 case 8:
+                    adminMenu();
+                    break;
+                case 9:
                     fileMgr.saveAll(fm);
                     System.out.println("Data saved!");
                     break;
-                case 9:
+                case 10:
                     fileMgr.saveAll(fm);
                     System.out.println("Data saved. Thank you, "
                             + currentUser.getFullName() + "!");
@@ -176,7 +182,45 @@ public class Menu {
                 default:
                     System.out.println("Invalid choice!");
             }
-        } while (choice != 9);
+        } while (choice != 10);
+    }
+
+    // ===== AHELPER submenu (the AI advisor, spec section 3) =====
+
+    private void ahelperMenu() {
+        int choice;
+        do {
+            System.out.println("\n===== AHELPER - AI FINANCIAL ADVISOR =====");
+            System.out.println("1. Analyse My Spending");
+            System.out.println("2. Predict My Budget Status");
+            System.out.println("3. Suggest Savings");
+            System.out.println("4. Give Me Personalised Tips");
+            System.out.println("5. Ask AHelper (quick questions)");
+            System.out.println("6. Back to Main Menu");
+
+            choice = readInt("Enter your choice: ");
+            switch (choice) {
+                case 1:
+                    ahelper.analyzeSpending();
+                    break;
+                case 2:
+                    ahelper.predictBudgetStatus();
+                    break;
+                case 3:
+                    ahelper.suggestSavings();
+                    break;
+                case 4:
+                    ahelper.giveTips();
+                    break;
+                case 5:
+                    ahelper.chat(input);
+                    break;
+                case 6:
+                    break;
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        } while (choice != 6);
     }
 
     // ===== Dashboard: quick overview (plan section 8, option 1) =====
