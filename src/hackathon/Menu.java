@@ -232,8 +232,8 @@ public class Menu {
                 + " | Total expenses: RM" + fm.getTotalExpenses());
 
         // Budget warnings on the dashboard
-        for (int i = 0; i < fm.getBudgetCount(); i++) {
-            Budget b = fm.getBudgets()[i];
+        for (int i = 0; i < fm.getMyBudgetCount(); i++) {
+            Budget b = fm.getMyBudgets()[i];
             String status = b.getStatus();
             if (!status.equals("Under control")) {
                 System.out.println("ALERT - " + b.getCategory() + ": " + status);
@@ -271,11 +271,11 @@ public class Menu {
                     break;
                 case 2:
                     System.out.println("\n--- ALL INCOME ---");
-                    for (int i = 0; i < fm.getIncomeCount(); i++) {
+                    for (int i = 0; i < fm.getMyIncomeCount(); i++) {
                         System.out.println((i + 1) + ".");
-                        fm.getIncomes()[i].displayDetails();
+                        fm.getMyIncomes()[i].displayDetails();
                     }
-                    if (fm.getIncomeCount() == 0) {
+                    if (fm.getMyIncomeCount() == 0) {
                         System.out.println("(no income recorded)");
                     }
                     break;
@@ -356,11 +356,11 @@ public class Menu {
                     break;
                 case 2:
                     System.out.println("\n--- ALL EXPENSES ---");
-                    for (int i = 0; i < fm.getExpenseCount(); i++) {
+                    for (int i = 0; i < fm.getMyExpenseCount(); i++) {
                         System.out.println((i + 1) + ".");
-                        fm.getExpenses()[i].displayDetails();
+                        fm.getMyExpenses()[i].displayDetails();
                     }
-                    if (fm.getExpenseCount() == 0) {
+                    if (fm.getMyExpenseCount() == 0) {
                         System.out.println("(no expenses recorded)");
                     }
                     break;
@@ -426,11 +426,11 @@ public class Menu {
                     break;
                 case 2:
                     System.out.println("\n--- ALL BUDGETS ---");
-                    for (int i = 0; i < fm.getBudgetCount(); i++) {
-                        fm.getBudgets()[i].displayDetails();
+                    for (int i = 0; i < fm.getMyBudgetCount(); i++) {
+                        fm.getMyBudgets()[i].displayDetails();
                         System.out.println();
                     }
-                    if (fm.getBudgetCount() == 0) {
+                    if (fm.getMyBudgetCount() == 0) {
                         System.out.println("(no budgets set)");
                     }
                     break;
@@ -477,11 +477,11 @@ public class Menu {
                     break;
                 case 2:
                     System.out.println("\n--- ALL GOALS ---");
-                    for (int i = 0; i < fm.getGoalCount(); i++) {
-                        fm.getGoals()[i].displayDetails();
+                    for (int i = 0; i < fm.getMyGoalCount(); i++) {
+                        fm.getMyGoals()[i].displayDetails();
                         System.out.println();
                     }
-                    if (fm.getGoalCount() == 0) {
+                    if (fm.getMyGoalCount() == 0) {
                         System.out.println("(no savings goals yet)");
                     }
                     break;

@@ -29,28 +29,6 @@ public class Admin extends User {
         System.out.println("Role: Admin");
     }
 
-    // Admin-only behaviour: add a new expense category to the system.
-    // Returns true if added, false if the category name is empty.
-    public boolean addCategory(String[] categories, int count, String newCategory) {
-        if (newCategory == null || newCategory.trim().isEmpty()) {
-            return false; // business rule: category name cannot be empty
-        }
-        if (count >= categories.length) {
-            return false; // array is full
-        }
-        categories[count] = newCategory;
-        categoriesManaged++;
-        return true;
-    }
-
-    // Admin-only behaviour: display all registered expense categories
-    public void viewCategories(String[] categories, int count) {
-        System.out.println("Available expense categories:");
-        for (int i = 0; i < count; i++) {
-            System.out.println("  " + (i + 1) + ". " + categories[i]);
-        }
-    }
-
     // Getter for the extra attribute
     public int getCategoriesManaged() {
         return categoriesManaged;

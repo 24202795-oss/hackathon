@@ -148,13 +148,13 @@ public class AHelper {
                 + String.format("%.2f", projected) + " this month.");
 
         // Compare the projection against each of MY budgets
-        if (fm.getBudgetCount() == 0) {
+        if (fm.getMyBudgetCount() == 0) {
             System.out.println("(You have no budgets set yet - set one "
                     + "so I can warn you before you overshoot.)");
             return;
         }
-        for (int i = 0; i < fm.getBudgetCount(); i++) {
-            Budget b = fm.getBudgets()[i];
+        for (int i = 0; i < fm.getMyBudgetCount(); i++) {
+            Budget b = fm.getMyBudgets()[i];
             double categoryTotal = myCategoryTotal(b.getCategory());
             double categoryProjection = (categoryTotal / days) * 31;
             double remaining = b.getLimit() - categoryProjection;
@@ -273,9 +273,9 @@ public class AHelper {
             }
         }
 
-        // Rule 2: any budget at or past 80% usage
-        for (int i = 0; i < fm.getBudgetCount(); i++) {
-            Budget b = fm.getBudgets()[i];
+        // Rule 2: any of MY budgets at or past 80% usage
+        for (int i = 0; i < fm.getMyBudgetCount(); i++) {
+            Budget b = fm.getMyBudgets()[i];
             if (b.getUsagePercent() >= 80) {
                 System.out.println(tipNumber + ". Your " + b.getCategory()
                         + " budget is " + String.format("%.1f", b.getUsagePercent())
@@ -292,14 +292,8 @@ public class AHelper {
             tipNumber++;
         }
 
-        // Rule 4: no savings goal set
-        boolean hasMyGoal = false;
-        for (int i = 0; i < fm.getGoalCount(); i++) {
-            if (fm.getGoals()[i].getOwner().equals(fm.getCurrentOwner())) {
-                hasMyGoal = true;
-            }
-        }
-        if (!hasMyGoal) {
+        // Rule 4: no savings goal set (checks MY goals)
+        if (fm.getMyGoalCount() == 0) {
             System.out.println(tipNumber + ". You have no savings goal. "
                     + "Setting one (even a small one) makes saving a habit.");
             tipNumber++;

@@ -60,6 +60,125 @@ public class FinanceManager {
     public int getGoalCount() { return goalCount; }
     public int getCategoryCount() { return categoryCount; }
 
+    // ===== Owner-filtered view helpers (the arrays hold ALL users'
+    // records; the menu and reports must only show the current user's) =====
+
+    // My income records, as a filtered view (index 0 = my first record)
+    public Income[] getMyIncomes() {
+        Income[] mine = new Income[incomeCount];
+        int n = 0;
+        for (int i = 0; i < incomeCount; i++) {
+            if (incomes[i].getOwner().equals(currentOwner)) {
+                mine[n] = incomes[i];
+                n++;
+            }
+        }
+        return trimIncomeView(mine, n);
+    }
+
+    public int getMyIncomeCount() {
+        int n = 0;
+        for (int i = 0; i < incomeCount; i++) {
+            if (incomes[i].getOwner().equals(currentOwner)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    // My expense records, as a filtered view
+    public Expense[] getMyExpenses() {
+        Expense[] mine = new Expense[expenseCount];
+        int n = 0;
+        for (int i = 0; i < expenseCount; i++) {
+            if (expenses[i].getOwner().equals(currentOwner)) {
+                mine[n] = expenses[i];
+                n++;
+            }
+        }
+        return trimExpenseView(mine, n);
+    }
+
+    public int getMyExpenseCount() {
+        int n = 0;
+        for (int i = 0; i < expenseCount; i++) {
+            if (expenses[i].getOwner().equals(currentOwner)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    // My budgets, as a filtered view
+    public Budget[] getMyBudgets() {
+        Budget[] mine = new Budget[budgetCount];
+        int n = 0;
+        for (int i = 0; i < budgetCount; i++) {
+            if (budgets[i].getOwner().equals(currentOwner)) {
+                mine[n] = budgets[i];
+                n++;
+            }
+        }
+        Budget[] exact = new Budget[n];
+        for (int i = 0; i < n; i++) {
+            exact[i] = mine[i];
+        }
+        return exact;
+    }
+
+    public int getMyBudgetCount() {
+        int n = 0;
+        for (int i = 0; i < budgetCount; i++) {
+            if (budgets[i].getOwner().equals(currentOwner)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    // My goals, as a filtered view
+    public SavingsGoal[] getMyGoals() {
+        SavingsGoal[] mine = new SavingsGoal[goalCount];
+        int n = 0;
+        for (int i = 0; i < goalCount; i++) {
+            if (goals[i].getOwner().equals(currentOwner)) {
+                mine[n] = goals[i];
+                n++;
+            }
+        }
+        SavingsGoal[] exact = new SavingsGoal[n];
+        for (int i = 0; i < n; i++) {
+            exact[i] = mine[i];
+        }
+        return exact;
+    }
+
+    public int getMyGoalCount() {
+        int n = 0;
+        for (int i = 0; i < goalCount; i++) {
+            if (goals[i].getOwner().equals(currentOwner)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private Income[] trimIncomeView(Income[] source, int n) {
+        Income[] exact = new Income[n];
+        for (int i = 0; i < n; i++) {
+            exact[i] = source[i];
+        }
+        return exact;
+    }
+
+    private Expense[] trimExpenseView(Expense[] source, int n) {
+        Expense[] exact = new Expense[n];
+        for (int i = 0; i < n; i++) {
+            exact[i] = source[i];
+        }
+        return exact;
+    }
+
     // ===== INCOME operations (filtered by owner) =====
 
     // Business rule: amount must be greater than RM0 (plan section 9.6).

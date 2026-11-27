@@ -32,9 +32,21 @@ public class ReportGenerator {
         System.out.println("Remaining balance: RM" + fm.getBalance());
     }
 
+    // Sum of MY expenses for one category (owner-filtered)
+    private double myCategoryTotal(String category) {
+        double total = 0;
+        Expense[] expenses = fm.getMyExpenses();
+        for (int i = 0; i < expenses.length; i++) {
+            if (expenses[i].getCategory().equalsIgnoreCase(category)) {
+                total = total + expenses[i].getAmount();
+            }
+        }
+        return total;
+    }
+
     // ===== Report 2: expense breakdown by category (submenu 4) =====
 
-    // Sums the expenses of each category using the manager's own
+    // Sums MY expenses of each category using the manager's own
     // category list, and prints them from highest to lowest.
     public void showExpenseBreakdown() {
         System.out.println("\n===== EXPENSE BREAKDOWN BY CATEGORY =====");
@@ -42,7 +54,7 @@ public class ReportGenerator {
         Category[] categories = fm.getCategories();
         int categoryCount = fm.getCategoryCount();
 
-        if (fm.getExpenseCount() == 0) {
+        if (fm.getMyExpenseCount() == 0) {
             System.out.println("No expenses recorded yet.");
             return;
         }
@@ -55,12 +67,7 @@ public class ReportGenerator {
         // Loop over categories first, then expenses (the grouping loop)
         for (int c = 0; c < categoryCount; c++) {
             String name = categories[c].getName();
-            double total = 0;
-            for (int i = 0; i < fm.getExpenseCount(); i++) {
-                if (fm.getExpenses()[i].getCategory().equalsIgnoreCase(name)) {
-                    total = total + fm.getExpenses()[i].getAmount();
-                }
-            }
+            double total = myCategoryTotal(name);
             names[used] = name;
             totals[used] = total;
             used++;
@@ -105,18 +112,18 @@ public class ReportGenerator {
         System.out.println("Balance:         RM" + fm.getBalance());
         System.out.println("Saved in goals:  RM" + fm.getTotalSaved());
 
-        // Budget section
+        // Budget section (my budgets only)
         System.out.println("\nBudget status:");
-        for (int i = 0; i < fm.getBudgetCount(); i++) {
-            Budget b = fm.getBudgets()[i];
+        for (int i = 0; i < fm.getMyBudgetCount(); i++) {
+            Budget b = fm.getMyBudgets()[i];
             System.out.println("  " + b.getCategory() + ": RM" + b.getSpent()
                     + " of RM" + b.getLimit() + " used (" + b.getStatus() + ")");
         }
 
-        // Savings goals section
+        // Savings goals section (my goals only)
         System.out.println("\nSavings goals:");
-        for (int i = 0; i < fm.getGoalCount(); i++) {
-            SavingsGoal g = fm.getGoals()[i];
+        for (int i = 0; i < fm.getMyGoalCount(); i++) {
+            SavingsGoal g = fm.getMyGoals()[i];
             System.out.println("  " + g.getGoalName() + ": "
                     + String.format("%.1f", g.getProgressPercent()) + "% funded"
                     + (g.isCompleted() ? " [DONE]" : ""));
@@ -144,12 +151,7 @@ public class ReportGenerator {
             Category[] categories = fm.getCategories();
             for (int c = 0; c < fm.getCategoryCount(); c++) {
                 String name = categories[c].getName();
-                double total = 0;
-                for (int i = 0; i < fm.getExpenseCount(); i++) {
-                    if (fm.getExpenses()[i].getCategory().equalsIgnoreCase(name)) {
-                        total = total + fm.getExpenses()[i].getAmount();
-                    }
-                }
+                double total = myCategoryTotal(name);
                 if (total > 0) {
                     double percent = (total / fm.getTotalExpenses()) * 100;
                     output.println(String.format("%-15s RM%8.2f  (%.1f%%)",
@@ -159,16 +161,16 @@ public class ReportGenerator {
             output.println();
 
             output.println("--- Budgets ---");
-            for (int i = 0; i < fm.getBudgetCount(); i++) {
-                Budget b = fm.getBudgets()[i];
+            for (int i = 0; i < fm.getMyBudgetCount(); i++) {
+                Budget b = fm.getMyBudgets()[i];
                 output.println("  " + b.getCategory() + ": RM" + b.getSpent()
                         + " of RM" + b.getLimit() + " (" + b.getStatus() + ")");
             }
             output.println();
 
             output.println("--- Savings goals ---");
-            for (int i = 0; i < fm.getGoalCount(); i++) {
-                SavingsGoal g = fm.getGoals()[i];
+            for (int i = 0; i < fm.getMyGoalCount(); i++) {
+                SavingsGoal g = fm.getMyGoals()[i];
                 output.println("  " + g.getGoalName() + ": RM" + g.getSavedAmount()
                         + " of RM" + g.getTargetAmount()
                         + " (" + String.format("%.1f", g.getProgressPercent()) + "%)");

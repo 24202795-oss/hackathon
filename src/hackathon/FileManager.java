@@ -10,12 +10,14 @@ import java.io.FileReader;
  * Saves all records to .txt files and loads them back when the
  * program restarts (plan section 10).
  *
- * File formats (fields separated by the | character):
- *   income.txt    Date|Description|Amount|Source
- *   expenses.txt  Date|Description|Amount|Category
- *   budgets.txt   Category|Limit|Spent
- *   savings.txt   GoalName|TargetAmount|SavedAmount
- *   categories.txt CategoryName
+ * File formats (fields separated by the | character; the first
+ * field on every record line is the owner's username):
+ *   income.txt     Owner|Date|Description|Amount|Source
+ *   expenses.txt   Owner|Date|Description|Amount|Category
+ *   budgets.txt    Owner|Category|Limit|Spent
+ *   savings.txt    Owner|GoalName|TargetAmount|SavedAmount
+ *   categories.txt CategoryName   (system-wide, no owner)
+ *   users.txt      Username|Password|FullName|Role  (handled by UserStore)
  *
  * All saving REWRITES the whole file from the current arrays
  * (never append), so updates and deletes are always reflected
