@@ -1,2 +1,0 @@
-05/12/2026|Lunch|15.0|Food
-06/12/2026|Bus ticket|3.0|Transport

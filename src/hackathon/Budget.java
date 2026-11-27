@@ -9,15 +9,26 @@ package hackathon;
 public class Budget {
 
     // Attributes
+    private String owner;      // username this budget belongs to
     private String category;   // which category the limit applies to
     private double limit;      // maximum allowed spending (RM)
     private double spent;      // how much has been spent so far (RM)
 
     // Constructor
-    public Budget(String category, double limit) {
+    public Budget(String owner, String category, double limit) {
+        this.owner = owner;
         this.category = category;
         this.limit = limit;
         this.spent = 0;        // a new budget starts with nothing spent
+    }
+
+    // Getter/setter for the owner
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     // Getter methods

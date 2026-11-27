@@ -41,7 +41,8 @@ public class FileManager {
             PrintWriter output = new PrintWriter(new FileWriter("income.txt"));
             Income[] incomes = fm.getIncomes();
             for (int i = 0; i < fm.getIncomeCount(); i++) {
-                output.println(incomes[i].getDate() + "|"
+                output.println(incomes[i].getOwner() + "|"
+                        + incomes[i].getDate() + "|"
                         + incomes[i].getDescription() + "|"
                         + incomes[i].getAmount() + "|"
                         + incomes[i].getSource());
@@ -58,7 +59,8 @@ public class FileManager {
             PrintWriter output = new PrintWriter(new FileWriter("expenses.txt"));
             Expense[] expenses = fm.getExpenses();
             for (int i = 0; i < fm.getExpenseCount(); i++) {
-                output.println(expenses[i].getDate() + "|"
+                output.println(expenses[i].getOwner() + "|"
+                        + expenses[i].getDate() + "|"
                         + expenses[i].getDescription() + "|"
                         + expenses[i].getAmount() + "|"
                         + expenses[i].getCategory());
@@ -76,7 +78,8 @@ public class FileManager {
             PrintWriter output = new PrintWriter(new FileWriter("budgets.txt"));
             Budget[] budgets = fm.getBudgets();
             for (int i = 0; i < fm.getBudgetCount(); i++) {
-                output.println(budgets[i].getCategory() + "|"
+                output.println(budgets[i].getOwner() + "|"
+                        + budgets[i].getCategory() + "|"
                         + budgets[i].getLimit() + "|"
                         + budgets[i].getSpent());
             }
@@ -92,7 +95,8 @@ public class FileManager {
             PrintWriter output = new PrintWriter(new FileWriter("savings.txt"));
             SavingsGoal[] goals = fm.getGoals();
             for (int i = 0; i < fm.getGoalCount(); i++) {
-                output.println(goals[i].getGoalName() + "|"
+                output.println(goals[i].getOwner() + "|"
+                        + goals[i].getGoalName() + "|"
                         + goals[i].getTargetAmount() + "|"
                         + goals[i].getSavedAmount());
             }
@@ -148,11 +152,13 @@ public class FileManager {
                     continue; // skip blank lines
                 }
                 String[] data = line.split("\\|");
-                // Format: Date|Description|Amount|Source
+                // Format: Owner|Date|Description|Amount|Source
+                fm.setOwnerForLoading(data[0]);
                 Income income = new Income(
-                        data[0], data[1],
-                        Double.parseDouble(data[2]), data[3]);
+                        data[0], data[1], data[2],
+                        Double.parseDouble(data[3]), data[4]);
                 fm.addIncome(income);
+                fm.setCurrentOwner("");
             }
             reader.close();
         } catch (IOException | RuntimeException e) {
@@ -172,12 +178,15 @@ public class FileManager {
                     continue;
                 }
                 String[] data = line.split("\\|");
-                // Format: Date|Description|Amount|Category
+                // Format: Owner|Date|Description|Amount|Category
                 // addExpense is used (not a direct array write) so the
-                // category validation and budget syncing still apply
+                // category validation and budget syncing still apply.
+                // The owner is temporarily set to the record's owner.
+                fm.setOwnerForLoading(data[0]);
                 fm.addExpense(new Expense(
-                        data[0], data[1],
-                        Double.parseDouble(data[2]), data[3]));
+                        data[0], data[1], data[2],
+                        Double.parseDouble(data[3]), data[4]));
+                fm.setCurrentOwner("");
             }
             reader.close();
         } catch (IOException | RuntimeException e) {
@@ -197,11 +206,12 @@ public class FileManager {
                     continue;
                 }
                 String[] data = line.split("\\|");
-                // Format: Category|Limit|Spent
-                Budget budget = new Budget(data[0], Double.parseDouble(data[1]));
-                budget.addSpending(Double.parseDouble(data[2]));
+                // Format: Owner|Category|Limit|Spent
+                Budget budget = new Budget(data[0], data[1],
+                        Double.parseDouble(data[2]));
+                budget.addSpending(Double.parseDouble(data[3]));
                 fm.restoreBudget(budget);
-                fm.addCategory(data[0]); // ensure the category exists (ignored if duplicate)
+                fm.addCategory(data[1]); // ensure the category exists (ignored if duplicate)
             }
             reader.close();
         } catch (IOException | RuntimeException e) {
@@ -221,11 +231,13 @@ public class FileManager {
                     continue;
                 }
                 String[] data = line.split("\\|");
-                // Format: GoalName|TargetAmount|SavedAmount
+                // Format: Owner|GoalName|TargetAmount|SavedAmount
+                fm.setOwnerForLoading(data[0]);
                 SavingsGoal goal = new SavingsGoal(
-                        data[0], Double.parseDouble(data[1]));
-                goal.addSavings(Double.parseDouble(data[2]));
+                        data[0], data[1], Double.parseDouble(data[2]));
+                goal.addSavings(Double.parseDouble(data[3]));
                 fm.addGoal(goal);
+                fm.setCurrentOwner("");
             }
             reader.close();
         } catch (IOException | RuntimeException e) {

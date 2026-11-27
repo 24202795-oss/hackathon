@@ -10,15 +10,26 @@ package hackathon;
 public class Transaction {
 
     // Attributes (protected so child classes can use them directly)
+    protected String owner;       // username of the user this record belongs to
     protected String date;
     protected String description;
     protected double amount;
 
-    // Constructor: runs when a new Transaction object is created
-    public Transaction(String date, String description, double amount) {
+    // Constructor
+    public Transaction(String owner, String date, String description, double amount) {
+        this.owner = owner;
         this.date = date;
         this.description = description;
         this.amount = amount;
+    }
+
+    // Getter/setter for the owner
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     // Getter methods: return the value stored in each attribute

@@ -14,8 +14,8 @@ public class Expense extends Transaction {
 
     // Constructor: passes the shared attributes to the parent
     // class using super(), then stores its own category
-    public Expense(String date, String description, double amount, String category) {
-        super(date, description, amount); // calls the Transaction constructor
+    public Expense(String owner, String date, String description, double amount, String category) {
+        super(owner, date, description, amount); // calls the Transaction constructor
         this.category = category;
     }
 

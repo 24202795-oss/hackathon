@@ -1,0 +1,17 @@
+=========================================
+ PERSONAL FINANCE SYSTEM - REPORT
+=========================================
+
+--- Totals ---
+Total income:    RM1000.0
+Total expenses:  RM18.0
+Remaining balance: RM982.0
+
+--- Expense breakdown by category ---
+Food            RM   15.00  (83.3%)
+Transport       RM    3.00  (16.7%)
+
+--- Budgets ---
+  Food: RM15.0 of RM300.0 (Under control)
+
+--- Savings goals ---

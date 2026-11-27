@@ -10,15 +10,26 @@ package hackathon;
 public class SavingsGoal {
 
     // Attributes
+    private String owner;        // username this goal belongs to
     private String goalName;     // what the user is saving for
     private double targetAmount; // total amount needed (RM)
     private double savedAmount;  // amount saved so far (RM)
 
     // Constructor: a new goal starts with RM0 saved
-    public SavingsGoal(String goalName, double targetAmount) {
+    public SavingsGoal(String owner, String goalName, double targetAmount) {
+        this.owner = owner;
         this.goalName = goalName;
         this.targetAmount = targetAmount;
         this.savedAmount = 0;
+    }
+
+    // Getter/setter for the owner
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     // Getter methods

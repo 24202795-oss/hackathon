@@ -88,6 +88,8 @@ public class Menu {
             }
         }
         System.out.println("Welcome, " + currentUser.getFullName() + "!");
+        // All records created from now on belong to this user
+        fm.setCurrentOwner(currentUser.getUsername());
         return currentUser;
     }
 
@@ -216,7 +218,7 @@ public class Menu {
                     String desc = readLine("Description: ");
                     double amount = readDouble("Amount (RM): ");
                     String source = readLine("Source: ");
-                    Income income = new Income(date, desc, amount, source);
+                    Income income = new Income(fm.getCurrentOwner(), date, desc, amount, source);
                     if (fm.addIncome(income)) {
                         System.out.println("Income recorded!");
                     } else {
@@ -290,7 +292,7 @@ public class Menu {
                     String desc = readLine("Description: ");
                     double amount = readDouble("Amount (RM): ");
                     String category = readLine("Category (must exist): ");
-                    Expense expense = new Expense(date, desc, amount, category);
+                    Expense expense = new Expense(fm.getCurrentOwner(), date, desc, amount, category);
                     if (fm.addExpense(expense)) {
                         System.out.println("Expense recorded!");
                         // Budget alert (plan section 9.4: alert at 100%)
@@ -423,7 +425,7 @@ public class Menu {
                     if (!isNormalUser()) break;
                     String name = readLine("Goal name: ");
                     double target = readDouble("Target amount (RM): ");
-                    if (fm.addGoal(new SavingsGoal(name, target))) {
+                    if (fm.addGoal(new SavingsGoal(fm.getCurrentOwner(), name, target))) {
                         System.out.println("Goal created!");
                     } else {
                         System.out.println("Invalid target (must be > RM0).");
@@ -450,12 +452,7 @@ public class Menu {
                     break;
                 case 4:
                     String gCheck = readLine("Goal name: ");
-                    SavingsGoal g = null;
-                    for (int i = 0; i < fm.getGoalCount(); i++) {
-                        if (fm.getGoals()[i].getGoalName().equalsIgnoreCase(gCheck)) {
-                            g = fm.getGoals()[i];
-                        }
-                    }
+                    SavingsGoal g = fm.findGoal(gCheck);
                     if (g != null) {
                         g.displayDetails();
                     } else {

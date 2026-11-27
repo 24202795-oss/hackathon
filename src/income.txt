@@ -1,1 +1,1 @@
-01/12/2026|Allowance|1000.0|Parents
+ali|01/12/2026|Salary|2000.0|Company

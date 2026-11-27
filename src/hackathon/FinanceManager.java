@@ -25,6 +25,27 @@ public class FinanceManager {
     private int goalCount = 0;
     private int categoryCount = 0;
 
+    // The logged-in username. All views and totals only consider
+    // records whose owner matches, so different users each see
+    // their own income, expenses, budgets and savings.
+    private String currentOwner = "";
+
+    // Called by Menu right after login
+    public void setCurrentOwner(String username) {
+        this.currentOwner = username;
+    }
+
+    // Used by FileManager during loading: records carry their owner
+    // in the file, so addX is called once per record with that owner
+    // temporarily active. NOT for normal runtime use.
+    public void setOwnerForLoading(String username) {
+        this.currentOwner = username;
+    }
+
+    public String getCurrentOwner() {
+        return currentOwner;
+    }
+
     // ===== Getters the other classes need (AHelper, FileManager, ReportGenerator) =====
 
     public Income[] getIncomes() { return incomes; }
@@ -39,9 +60,10 @@ public class FinanceManager {
     public int getGoalCount() { return goalCount; }
     public int getCategoryCount() { return categoryCount; }
 
-    // ===== INCOME operations =====
+    // ===== INCOME operations (filtered by owner) =====
 
-    // Business rule: amount must be greater than RM0 (plan section 9.6)
+    // Business rule: amount must be greater than RM0 (plan section 9.6).
+    // The record is stamped with the current user's username.
     public boolean addIncome(Income income) {
         if (income == null || income.getAmount() <= 0) {
             return false;
@@ -49,14 +71,17 @@ public class FinanceManager {
         if (incomeCount >= incomes.length) {
             return false; // array full
         }
+        income.setOwner(currentOwner);
         incomes[incomeCount] = income;
         incomeCount++;
         return true;
     }
 
+    // Search only within MY income records
     public Income searchIncomeBySource(String source) {
         for (int i = 0; i < incomeCount; i++) {
-            if (incomes[i].getSource().equalsIgnoreCase(source)) {
+            if (incomes[i].getOwner().equals(currentOwner)
+                    && incomes[i].getSource().equalsIgnoreCase(source)) {
                 return incomes[i];
             }
         }
@@ -73,12 +98,14 @@ public class FinanceManager {
         return true;
     }
 
-    // Delete: remove by position and shift the rest left (plan section 7)
+    // Delete: remove by position, but only MY records count.
+    // Position refers to the record's place in MY list (1-based in menu).
     public boolean deleteIncome(int position) {
-        if (position < 0 || position >= incomeCount) {
+        int realIndex = myIncomeIndex(position);
+        if (realIndex == -1) {
             return false; // record does not exist
         }
-        for (int i = position; i < incomeCount - 1; i++) {
+        for (int i = realIndex; i < incomeCount - 1; i++) {
             incomes[i] = incomes[i + 1];
         }
         incomes[incomeCount - 1] = null;
@@ -86,7 +113,21 @@ public class FinanceManager {
         return true;
     }
 
-    // ===== EXPENSE operations =====
+    // Translates a position in MY income list to the real array index
+    private int myIncomeIndex(int position) {
+        int myPosition = 0;
+        for (int i = 0; i < incomeCount; i++) {
+            if (incomes[i].getOwner().equals(currentOwner)) {
+                if (myPosition == position) {
+                    return i;
+                }
+                myPosition++;
+            }
+        }
+        return -1;
+    }
+
+    // ===== EXPENSE operations (filtered by owner) =====
 
     // Business rules: amount > 0 and category must be valid (plan section 9.6)
     public boolean addExpense(Expense expense) {
@@ -99,10 +140,11 @@ public class FinanceManager {
         if (expenseCount >= expenses.length) {
             return false;
         }
+        expense.setOwner(currentOwner);
         expenses[expenseCount] = expense;
         expenseCount++;
 
-        // Update the matching budget (if one exists for this category)
+        // Update MY matching budget (if one exists for this category)
         Budget b = findBudget(expense.getCategory());
         if (b != null) {
             b.addSpending(expense.getAmount());
@@ -112,7 +154,8 @@ public class FinanceManager {
 
     public Expense searchExpenseByCategory(String category) {
         for (int i = 0; i < expenseCount; i++) {
-            if (expenses[i].getCategory().equalsIgnoreCase(category)) {
+            if (expenses[i].getOwner().equals(currentOwner)
+                    && expenses[i].getCategory().equalsIgnoreCase(category)) {
                 return expenses[i];
             }
         }
@@ -121,20 +164,36 @@ public class FinanceManager {
 
     public Expense searchExpenseByDescription(String keyword) {
         for (int i = 0; i < expenseCount; i++) {
-            if (expenses[i].getDescription().toLowerCase()
-                    .contains(keyword.toLowerCase())) {
+            if (expenses[i].getOwner().equals(currentOwner)
+                    && expenses[i].getDescription().toLowerCase()
+                        .contains(keyword.toLowerCase())) {
                 return expenses[i];
             }
         }
         return null;
     }
 
+    // Position in MY expense list -> real index
+    private int myExpenseIndex(int position) {
+        int myPosition = 0;
+        for (int i = 0; i < expenseCount; i++) {
+            if (expenses[i].getOwner().equals(currentOwner)) {
+                if (myPosition == position) {
+                    return i;
+                }
+                myPosition++;
+            }
+        }
+        return -1;
+    }
+
     public boolean updateExpenseAmount(int position, double newAmount) {
-        if (position < 0 || position >= expenseCount || newAmount <= 0) {
+        int realIndex = myExpenseIndex(position);
+        if (realIndex == -1 || newAmount <= 0) {
             return false;
         }
-        // Adjust the budget too: subtract old amount, add new amount
-        Expense e = expenses[position];
+        // Adjust MY budget too: subtract old amount, add new amount
+        Expense e = expenses[realIndex];
         Budget b = findBudget(e.getCategory());
         if (b != null) {
             b.addSpending(newAmount - e.getAmount());
@@ -144,16 +203,17 @@ public class FinanceManager {
     }
 
     public boolean deleteExpense(int position) {
-        if (position < 0 || position >= expenseCount) {
+        int realIndex = myExpenseIndex(position);
+        if (realIndex == -1) {
             return false;
         }
-        // Remove the amount from the matching budget before deleting
-        Expense e = expenses[position];
+        // Remove the amount from MY matching budget before deleting
+        Expense e = expenses[realIndex];
         Budget b = findBudget(e.getCategory());
         if (b != null) {
             b.addSpending(-e.getAmount());
         }
-        for (int i = position; i < expenseCount - 1; i++) {
+        for (int i = realIndex; i < expenseCount - 1; i++) {
             expenses[i] = expenses[i + 1];
         }
         expenses[expenseCount - 1] = null;
@@ -161,14 +221,14 @@ public class FinanceManager {
         return true;
     }
 
-    // ===== BUDGET operations =====
+    // ===== BUDGET operations (filtered by owner) =====
 
     // Business rule: budget must be greater than RM0
     public boolean setBudget(String category, double limit) {
         if (limit <= 0) {
             return false;
         }
-        // If a budget for this category already exists, update it instead
+        // If MY budget for this category already exists, update it instead
         Budget existing = findBudget(category);
         if (existing != null) {
             existing.setLimit(limit);
@@ -177,11 +237,12 @@ public class FinanceManager {
         if (budgetCount >= budgets.length) {
             return false;
         }
-        Budget newBudget = new Budget(category, limit);
-        // Backfill: count expenses already recorded for this category
+        Budget newBudget = new Budget(currentOwner, category, limit);
+        // Backfill: count MY expenses already recorded for this category
         // BEFORE the budget existed, so the budget starts in sync
         for (int i = 0; i < expenseCount; i++) {
-            if (expenses[i].getCategory().equalsIgnoreCase(category)) {
+            if (expenses[i].getOwner().equals(currentOwner)
+                    && expenses[i].getCategory().equalsIgnoreCase(category)) {
                 newBudget.addSpending(expenses[i].getAmount());
             }
         }
@@ -192,7 +253,8 @@ public class FinanceManager {
 
     public Budget findBudget(String category) {
         for (int i = 0; i < budgetCount; i++) {
-            if (budgets[i].getCategory().equalsIgnoreCase(category)) {
+            if (budgets[i].getOwner().equals(currentOwner)
+                    && budgets[i].getCategory().equalsIgnoreCase(category)) {
                 return budgets[i];
             }
         }
@@ -210,7 +272,7 @@ public class FinanceManager {
         return true;
     }
 
-    // ===== SAVINGS GOAL operations =====
+    // ===== SAVINGS GOAL operations (filtered by owner) =====
 
     // Business rule: target must be greater than RM0
     public boolean addGoal(SavingsGoal goal) {
@@ -220,6 +282,7 @@ public class FinanceManager {
         if (goalCount >= goals.length) {
             return false;
         }
+        goal.setOwner(currentOwner);
         goals[goalCount] = goal;
         goalCount++;
         return true;
@@ -227,11 +290,23 @@ public class FinanceManager {
 
     public boolean addToGoal(String goalName, double amount) {
         for (int i = 0; i < goalCount; i++) {
-            if (goals[i].getGoalName().equalsIgnoreCase(goalName)) {
+            if (goals[i].getOwner().equals(currentOwner)
+                    && goals[i].getGoalName().equalsIgnoreCase(goalName)) {
                 return goals[i].addSavings(amount); // goal validates amount itself
             }
         }
         return false; // goal not found
+    }
+
+    // Find MY goal by name (used by the menu's progress check)
+    public SavingsGoal findGoal(String goalName) {
+        for (int i = 0; i < goalCount; i++) {
+            if (goals[i].getOwner().equals(currentOwner)
+                    && goals[i].getGoalName().equalsIgnoreCase(goalName)) {
+                return goals[i];
+            }
+        }
+        return null;
     }
 
     // ===== CATEGORY operations (used by Admin) =====
@@ -263,22 +338,26 @@ public class FinanceManager {
         return false;
     }
 
-    // ===== FINANCIAL CALCULATIONS (plan section 9) =====
+    // ===== FINANCIAL CALCULATIONS (plan section 9) - MY records only =====
 
-    // Total income = sum of all income records (section 9.1)
+    // Total income = sum of MY income records (section 9.1)
     public double getTotalIncome() {
         double total = 0;
         for (int i = 0; i < incomeCount; i++) {
-            total = total + incomes[i].getAmount();
+            if (incomes[i].getOwner().equals(currentOwner)) {
+                total = total + incomes[i].getAmount();
+            }
         }
         return total;
     }
 
-    // Total expenses = sum of all expense records (section 9.2)
+    // Total expenses = sum of MY expense records (section 9.2)
     public double getTotalExpenses() {
         double total = 0;
         for (int i = 0; i < expenseCount; i++) {
-            total = total + expenses[i].getAmount();
+            if (expenses[i].getOwner().equals(currentOwner)) {
+                total = total + expenses[i].getAmount();
+            }
         }
         return total;
     }
@@ -288,11 +367,13 @@ public class FinanceManager {
         return getTotalIncome() - getTotalExpenses();
     }
 
-    // Total saved across all goals
+    // Total saved across MY goals
     public double getTotalSaved() {
         double total = 0;
         for (int i = 0; i < goalCount; i++) {
-            total = total + goals[i].getSavedAmount();
+            if (goals[i].getOwner().equals(currentOwner)) {
+                total = total + goals[i].getSavedAmount();
+            }
         }
         return total;
     }

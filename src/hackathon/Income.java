@@ -14,8 +14,8 @@ public class Income extends Transaction {
 
     // Constructor: first passes date, description, amount up to
     // the parent class using super(), then stores its own source
-    public Income(String date, String description, double amount, String source) {
-        super(date, description, amount); // calls the Transaction constructor
+    public Income(String owner, String date, String description, double amount, String source) {
+        super(owner, date, description, amount); // calls the Transaction constructor
         this.source = source;
     }
 
