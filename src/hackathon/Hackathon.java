@@ -87,5 +87,40 @@ public class Hackathon {
         for (int i = 0; i < people.length; i++) {
             people[i].displayDetails();
         }
+
+        // 9. Test Category: one with description, one without
+        Category c1 = new Category("Food", "Meals, snacks and drinks");
+        Category c2 = new Category("Entertainment");
+
+        System.out.println("\n----- CATEGORIES -----");
+        c1.displayDetails();
+        c2.displayDetails();
+
+        // 10. Test Budget: RM300 food budget, record RM250 spending
+        Budget b1 = new Budget("Food", 300);
+
+        System.out.println("\n----- BUDGET (spent RM250 of RM300 = 83%) -----");
+        b1.addSpending(250);
+        b1.displayDetails();
+
+        // Also check the exceeded status
+        b1.addSpending(100);
+        System.out.println("\n----- SAME BUDGET AFTER RM100 MORE -----");
+        b1.displayDetails();
+
+        // 11. Test SavingsGoal: Laptop RM2000 target, add RM800
+        SavingsGoal g1 = new SavingsGoal("Laptop", 2000);
+
+        System.out.println("\n----- SAVINGS GOAL -----");
+        g1.addSavings(800);
+        g1.displayDetails();
+
+        // Business rule: negative savings must be rejected
+        System.out.println("\nAdd negative savings (-50): " + g1.addSavings(-50));
+
+        // Finish the goal
+        g1.addSavings(1200);
+        System.out.println("\n----- GOAL AFTER FULLY SAVED -----");
+        g1.displayDetails();
     }
 }
