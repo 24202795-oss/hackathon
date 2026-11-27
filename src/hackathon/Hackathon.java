@@ -27,11 +27,13 @@ public class Hackathon {
         FileManager fileMgr = new FileManager();
         fileMgr.loadAll(fm);
 
-        // 3. Login (returns the User or Admin who logged in)
-        Menu menu = new Menu(fm, fileMgr);
-        menu.login();
+        // 3. Load registered accounts from users.txt
+        UserStore userStore = new UserStore();
+        userStore.loadUsers();
 
-        // 4. Run the main menu loop until the user chooses Exit
+        // 4. Login or register, then run the main menu until exit
+        Menu menu = new Menu(fm, fileMgr, userStore);
+        menu.login();
         menu.run();
 
         // (Data is saved inside the menu when the user exits or

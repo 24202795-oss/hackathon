@@ -17,13 +17,15 @@ public class Menu {
     private FinanceManager fm;
     private FileManager fileMgr;
     private ReportGenerator reports;
-    private User currentUser;   // the user who is logged in
+    private UserStore userStore;   // all registered accounts
+    private User currentUser;      // the user who is logged in
 
     // Constructor: receives the shared objects and builds a ReportGenerator
-    public Menu(FinanceManager fm, FileManager fileMgr) {
+    public Menu(FinanceManager fm, FileManager fileMgr, UserStore userStore) {
         this.input = new Scanner(System.in);
         this.fm = fm;
         this.fileMgr = fileMgr;
+        this.userStore = userStore;
         this.reports = new ReportGenerator(fm);
         this.currentUser = null;
     }
@@ -60,31 +62,64 @@ public class Menu {
         return input.nextLine();
     }
 
-    // ===== LOGIN (plan section 5: "User logs in") =====
+    // ===== LOGIN / REGISTER (accounts live in users.txt) =====
 
-    // Simple classroom login: one normal user + one admin are
-    // created here. Real user accounts would come from users.txt.
     public User login() {
-        User normalUser = new User("ali", "1234", "Ali bin Ahmad");
-        Admin admin = new Admin("admin", "admin", "System Administrator");
-
         System.out.println("===== PERSONAL FINANCE SYSTEM =====");
         while (currentUser == null) {
-            String username = readLine("Username: ");
-            String password = readLine("Password: ");
+            System.out.println("\n1. Login");
+            System.out.println("2. Register new account");
+            System.out.println("3. Exit");
+            int choice = readInt("Enter your choice: ");
 
-            if (normalUser.getUsername().equalsIgnoreCase(username)
-                    && normalUser.login(password)) {
-                currentUser = normalUser;
-            } else if (admin.getUsername().equalsIgnoreCase(username)
-                    && admin.login(password)) {
-                currentUser = admin;
-            } else {
-                System.out.println("Wrong username or password. Try again.\n");
+            switch (choice) {
+                case 1:
+                    doLogin();
+                    break;
+                case 2:
+                    doRegister();
+                    break;
+                case 3:
+                    System.out.println("Goodbye!");
+                    System.exit(0);
+                    break;
+                default:
+                    System.out.println("Invalid choice!");
             }
         }
         System.out.println("Welcome, " + currentUser.getFullName() + "!");
         return currentUser;
+    }
+
+    private void doLogin() {
+        String username = readLine("Username: ");
+        String password = readLine("Password: ");
+
+        User user = userStore.findUser(username);
+        if (user != null && user.login(password)) {
+            currentUser = user;
+        } else {
+            System.out.println("Wrong username or password.\n");
+        }
+    }
+
+    private void doRegister() {
+        System.out.println("\n--- NEW ACCOUNT ---");
+        String username = readLine("Choose a username: ");
+        String password = readLine("Choose a password: ");
+        String fullName = readLine("Your full name: ");
+        String role = readLine("Account type - type 'admin' for admin, "
+                + "anything else for normal user: ");
+
+        boolean created = userStore.register(
+                username, password, fullName, role.equalsIgnoreCase("admin"));
+
+        if (created) {
+            System.out.println("Account created! You can log in now.");
+        } else {
+            System.out.println("Could not create account: fields cannot be "
+                    + "empty and the username must not already exist.");
+        }
     }
 
     // ===== MAIN MENU (plan section 8) =====
@@ -99,8 +134,9 @@ public class Menu {
             System.out.println("4. Budget Management");
             System.out.println("5. Savings Goals");
             System.out.println("6. Financial Reports");
-            System.out.println("7. Save Data");
-            System.out.println("8. Exit");
+            System.out.println("7. Admin Menu (categories & users)");
+            System.out.println("8. Save Data");
+            System.out.println("9. Exit");
 
             choice = readInt("Enter your choice: ");
 
@@ -124,10 +160,13 @@ public class Menu {
                     reportsMenu();
                     break;
                 case 7:
+                    adminMenu();
+                    break;
+                case 8:
                     fileMgr.saveAll(fm);
                     System.out.println("Data saved!");
                     break;
-                case 8:
+                case 9:
                     fileMgr.saveAll(fm);
                     System.out.println("Data saved. Thank you, "
                             + currentUser.getFullName() + "!");
@@ -135,7 +174,7 @@ public class Menu {
                 default:
                     System.out.println("Invalid choice!");
             }
-        } while (choice != 8);
+        } while (choice != 9);
     }
 
     // ===== Dashboard: quick overview (plan section 8, option 1) =====
@@ -463,6 +502,64 @@ public class Menu {
                     System.out.println("Invalid choice!");
             }
         } while (choice != 5);
+    }
+
+    // ===== ADMIN MENU (plan section 11: categories & users) =====
+
+    private void adminMenu() {
+        // Only admins may enter (uses the Admin class's own abilities)
+        if (!(currentUser instanceof Admin)) {
+            System.out.println("Admins only.");
+            return;
+        }
+        Admin admin = (Admin) currentUser;   // now we can use Admin methods
+
+        int choice;
+        do {
+            System.out.println("\n===== ADMIN MENU =====");
+            System.out.println("1. Add Expense Category");
+            System.out.println("2. View Expense Categories");
+            System.out.println("3. View Registered Users");
+            System.out.println("4. Register New User");
+            System.out.println("5. Back to Main Menu");
+
+            choice = readInt("Enter your choice: ");
+            switch (choice) {
+                case 1:
+                    String name = readLine("New category name: ");
+                    if (fm.addCategory(name)) {
+                        System.out.println("Category added!");
+                    } else {
+                        System.out.println("Could not add: empty name or "
+                                + "category already exists.");
+                    }
+                    break;
+                case 2:
+                    fmCategoryList();
+                    break;
+                case 3:
+                    userStore.displayAll();
+                    break;
+                case 4:
+                    doRegister();
+                    break;
+                case 5:
+                    break;
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        } while (choice != 5);
+    }
+
+    private void fmCategoryList() {
+        System.out.println("\n--- EXPENSE CATEGORIES ---");
+        for (int i = 0; i < fm.getCategoryCount(); i++) {
+            System.out.println("  " + (i + 1) + ". "
+                    + fm.getCategories()[i].getName());
+        }
+        if (fm.getCategoryCount() == 0) {
+            System.out.println("(no categories yet)");
+        }
     }
 
     // ===== Role check (plan section 11: admin cannot edit records) =====
