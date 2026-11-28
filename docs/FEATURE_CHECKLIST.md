@@ -2,18 +2,36 @@
 
 Legend: ✅ implemented and tested (mock mode) · 🔌 implemented, awaits Java backend for real data · ⬜ not started
 
+## Authentication (added in this update)
+
+| Feature | Status | Notes |
+|---|---|---|
+| Login page with error messages (wrong password / unknown user) | ✅ COMPLETE AND TESTED | Demo accounts ali/1234, admin/admin |
+| Registration page (full name, username, password + confirm) | ✅ COMPLETE AND TESTED | Duplicate-username rejection tested |
+| Show/hide password toggles | ✅ COMPLETE AND TESTED | aria-label + aria-pressed |
+| Logout | ✅ COMPLETE AND TESTED | Returns to login screen |
+| Session handling (sessionStorage, survives reload) | ✅ COMPLETE AND TESTED | Token only — no financial data stored |
+| Protected navigation (login gate over all pages) | ✅ COMPLETE AND TESTED | |
+| User profile chip (avatar initials, name, role) | ✅ COMPLETE AND TESTED | Student / Administrator roles |
+| Role-based navigation (role-based nav visibility) | ✅ COMPLETE AND TESTED | Admins see only Admin Panel; users never see it |
+| Separate admin dashboard (Admin Panel) | ✅ COMPLETE AND TESTED | Mirrors Menu.adminMenu(): overview, category add/list, user list, register user |
+| Role guards both directions (URL hash access) | ✅ COMPLETE AND TESTED | Users blocked from #/admin; admins redirected from finance pages to Admin Panel |
+| Admin category management UI | ✅ COMPLETE IN MOCK MODE ONLY | Live mode needs `GET|POST /api/categories` (maps to FinanceManager.addCategory) |
+| Admin user list + register-user UI | ✅ COMPLETE IN MOCK MODE ONLY | Live mode needs `GET /api/users` + register (maps to UserStore) |
+| Live JWT/session auth via `Authorization: Bearer` + 401 auto-logout | 🔌 AWAITING JAVA BACKEND INTEGRATION | Needs Member 4 — see AUTHENTICATION_INTEGRATION.md |
+
 ## Core features
 
 | # | Feature | Status | Notes |
 |---|---|---|---|
-| 1 | Income management: summary, add/edit/delete, categories, dates, search & filters, confirmations, toasts, empty states | ✅ | All writes delegate to Api layer → Java in live mode |
-| 2 | Expense management: history, edit/delete, date/category/type filters, search, essential vs discretionary labels | ✅ | |
-| 3 | Budget management: monthly limit, category budgets, utilisation %, progress bars, 4-state colours (green/yellow/orange/red) | ✅ | Status values must come from Java (`status` field) |
-| 4 | Savings goals: create/edit/delete, progress bars, completion indicators, estimated time | 🔌 | `estimatedMonthsToEnd` renders when Java provides it; mock estimate used meanwhile |
-| 5 | Financial reports: totals, donut, essential/discretionary bars, 6-month line, top category, largest/average expense, month comparison | 🔌 | In live mode all stats come from `GET /api/reports` |
-| 6 | Budget alerts: warnings, exceeded, goal-completed, badges, severity indicators, empty state, mark-all-read | 🔌 | Alert conditions must be determined by Java |
-| 7 | AI advisor: chat layout, suggested questions, loading, error + retry | 🔌 | Live mode requires `POST /api/advice` (Java calls AI API; no keys in browser) |
-| 8 | SDG 12 integration: essential/discretionary split, dashboard sustainability section, tips | ✅ | No environmental claims made |
+| 1 | Income management: summary, add/edit/delete, categories, dates, search & filters, confirmations, toasts, empty states | ✅ COMPLETE IN MOCK MODE ONLY | All writes delegate to Api layer → Java in live mode |
+| 2 | Expense management: history, edit/delete, date/category/type filters, search, essential vs discretionary labels | ✅ COMPLETE IN MOCK MODE ONLY | |
+| 3 | Budget management: monthly limit, category budgets, utilisation %, progress bars, 4-state colours (green/yellow/orange/red) | ✅ COMPLETE IN MOCK MODE ONLY | Status values must come from Java (`status` field) |
+| 4 | Savings goals: create/edit/delete, progress bars, completion indicators, estimated time | 🔌 AWAITING JAVA BACKEND INTEGRATION | `estimatedMonthsToEnd` renders when Java provides it; mock estimate used meanwhile |
+| 5 | Financial reports: totals, donut, essential/discretionary bars, 6-month line, top category, largest/average expense, month comparison | 🔌 AWAITING JAVA BACKEND INTEGRATION | In live mode all stats come from `GET /api/reports` |
+| 6 | Budget alerts: warnings, exceeded, goal-completed, badges, severity indicators, empty state, mark-all-read | 🔌 AWAITING JAVA BACKEND INTEGRATION | Alert conditions must be determined by Java |
+| 7 | AI advisor: chat layout, suggested questions, loading, error + retry | 🔌 AWAITING JAVA BACKEND INTEGRATION | Live mode requires `POST /api/advice` (Java calls AI API; no keys in browser) |
+| 8 | SDG 12 integration: essential/discretionary split, dashboard sustainability section, tips | ✅ COMPLETE IN MOCK MODE ONLY | No environmental claims made |
 
 ## Dashboard
 

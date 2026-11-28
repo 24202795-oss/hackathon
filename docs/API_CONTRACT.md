@@ -128,6 +128,27 @@ Request: `{ "question": "How can I save more money this month?", "context": {} }
 Response: `{ "answer": "..." }`
 **Java calls the AI API server-side. API keys must never be sent to or stored in the browser.**
 
+## Authentication endpoints (NEW — frontend implemented, awaiting Member 4)
+
+Full details in `AUTHENTICATION_INTEGRATION.md`. The frontend sends `Authorization: Bearer <token>` on every request once logged in, and returns to the login screen on any `401`.
+
+### POST /api/auth/login
+Request: `{ "username": "ali", "password": "1234" }`
+Success `200`: `{ "username": "ali", "fullName": "Ali bin Ahmad", "role": "user", "token": "<server-generated>" }`
+Failure `401`: `{ "error": { "code": "INVALID_PASSWORD", "message": "Incorrect password. Please try again." } }`
+Maps to existing Java: `UserStore.findUser()` + `User.login(password)`; `role` is `"admin"` when the object is an `Admin` instance.
+
+### POST /api/auth/register
+Request: `{ "username": "meiling", "password": "...", "fullName": "Tan Mei Ling" }`
+Success `201`: same session shape as login (role `"user"`).
+Failure `409`: `{ "error": { "code": "USERNAME_TAKEN", "message": "Username already taken." } }`
+Maps to existing Java: `UserStore.register(username, password, fullName, false)`.
+
+### POST /api/auth/logout → `204` (invalidate token server-side if stateful)
+### GET /api/auth/me → `200` with `{username, fullName, role}` for the current token
+
+After login, all data endpoints (`/api/income`, `/api/expenses`, …) must return only records whose `owner` matches the session user (`Transaction.getOwner()`); 401 for missing/expired tokens.
+
 ## HTTP status codes expected
 - `200` success · `201` created · `204` deleted (no body)
-- `400` validation error (with error body) · `404` record not found · `500` server error
+- `400` validation error (with error body) · `401` not authenticated · `404` record not found · `409` conflict (duplicate username) · `500` server error

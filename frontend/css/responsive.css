@@ -27,6 +27,8 @@
 /* ---- Mobile ---- */
 @media (max-width: 600px) {
   body { font-size: 14px; }
+  .user-meta { display: none; }
+  .auth-card { padding: 24px 18px; }
   .card-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .page-toolbar { flex-direction: column; }

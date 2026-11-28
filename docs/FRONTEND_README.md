@@ -2,7 +2,9 @@
 
 SmartSpend is a personal finance web application for Malaysian university students (MYR), built for the WIX1002 FOP / ILMUcode Hackathon, Track 8 (Fintech & Personal Finance), aligned with SDG 12 — Responsible Consumption and Production.
 
-**Status: frontend complete, running on demonstration (mock) data.** The Java backend (Members 1, 2 and 4) is developed separately; this frontend is prepared to connect to it with a one-line switch.
+**Status: frontend complete including authentication (login/register/logout), running on demonstration (mock) data.** The Java backend (Members 1, 2 and 4) is developed separately; this frontend is prepared to connect to it with a one-line switch.
+
+**Demo accounts:** `ali / 1234` (student) · `admin / admin` (administrator). New accounts can be registered from the Register tab (mock mode stores them in memory only).
 
 ## How to run (preview the website)
 

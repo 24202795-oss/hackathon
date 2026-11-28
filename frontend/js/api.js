@@ -35,7 +35,10 @@ const Api = (() => {
   async function request(method, path, body) {
     const res = await timeoutFetch(`${API_CONFIG.baseUrl}${path}`, {
       method,
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      headers: {
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...authHeaders()
+      },
       body: body !== undefined ? JSON.stringify(body) : undefined
     });
     if (!res.ok) {
@@ -45,7 +48,11 @@ const Api = (() => {
         const data = await res.json();
         if (data && data.error && data.error.message) message = data.error.message;
       } catch (_) { /* non-JSON error body */ }
-      throw new Error(message);
+      // 401 = session expired / not logged in: drop session, app.js redirects to login
+      if (res.status === 401) saveSession(null);
+      const err = new Error(message);
+      err.status = res.status;
+      throw err;
     }
     if (res.status === 204) return null;
     return res.json();
@@ -60,9 +67,45 @@ const Api = (() => {
     return sen / 100;
   }
 
+  // ---------- AUTH SESSION (frontend-side session handling) ----------
+  // Only a lightweight session token is kept in sessionStorage — this is
+  // NOT financial data storage. Permanent data lives in Java text files.
+  const SESSION_KEY = "smartspend_session";
+  function saveSession(session) {
+    if (session) sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    else sessionStorage.removeItem(SESSION_KEY);
+  }
+  function getSession() {
+    try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (_) { return null; }
+  }
+
+  // authHeader() is attached to every live request once logged in.
+  function authHeaders() {
+    const s = getSession();
+    return s && s.token ? { "Authorization": "Bearer " + s.token } : {};
+  }
+
   // ---------- LIVE MODE (real Java backend) ----------
   // Endpoint paths follow docs/API_CONTRACT.md — confirm with Member 4.
+  // Auth endpoints map 1:1 to the existing Java classes:
+  //   login    -> UserStore.findUser() + User.login(password)
+  //   register -> UserStore.register(username, password, fullName, false)
+  //   roles    -> "user" | "admin" (Admin extends User — polymorphism)
+  // See docs/AUTHENTICATION_INTEGRATION.md for what Member 4 must add.
   const live = {
+    login: (username, password) => request("POST", "/api/auth/login", { username, password }),
+    register: (username, password, fullName) => request("POST", "/api/auth/register", { username, password, fullName }),
+    logout: () => request("POST", "/api/auth/logout"),
+    getMe: () => request("GET", "/api/auth/me"),
+    // Admin capabilities — map 1:1 to the existing Java admin menu:
+    //   listCategories -> FinanceManager.getCategories()/getCategoryCount()
+    //   addCategory    -> FinanceManager.addCategory(name)
+    //   listUsers      -> UserStore users array (username|fullName|role)
+    //   registerUser   -> UserStore.register(username, password, fullName, asAdmin)
+    listCategories: () => request("GET", "/api/categories"),
+    addCategory: (name) => request("POST", "/api/categories", { name }),
+    listUsers: () => request("GET", "/api/users"),
+    registerUser: (u) => request("POST", "/api/auth/register", u),
     getMeta: () => request("GET", "/api/meta"),
     getDashboard: () => request("GET", "/api/dashboard"),
     listIncome: (filters) => request("GET", `/api/income${qs(filters)}`),
@@ -95,6 +138,73 @@ const Api = (() => {
   }
 
   // ---------- MOCK MODE ----------
+  // Mock auth mirrors the Java backend's real data model
+  // (users.txt: username|password|fullName|role, demo accounts ali/1234
+  // and admin/admin) so the UI can be tested before Member 4's HTTP layer.
+  let mockUsers = null;
+  function ensureUsers() {
+    if (!mockUsers) {
+      mockUsers = [
+        { username: "ali", password: "1234", fullName: "Ali bin Ahmad", role: "user" },
+        { username: "admin", password: "admin", fullName: "System Administrator", role: "admin" }
+      ];
+    }
+    return mockUsers;
+  }
+  // Mock expense categories mirror FinanceManager's default categories
+  let mockCategories = null;
+  function ensureCategories() {
+    if (!mockCategories) {
+      mockCategories = [
+        { id: 1, name: "food" }, { id: 2, name: "transport" },
+        { id: 3, name: "education" }, { id: 4, name: "accommodation" },
+        { id: 5, name: "shopping" }, { id: 6, name: "entertainment" },
+        { id: 7, name: "healthcare" }, { id: 8, name: "utilities" }, { id: 9, name: "other" }
+      ];
+    }
+    return mockCategories;
+  }
+  const mockAdmin = {
+    listCategories: async () => ensureCategories().slice(),
+    addCategory: async (name) => {
+      const cats = ensureCategories();
+      const clean = (name || "").trim().toLowerCase();
+      if (!clean) throw new Error("Category name cannot be empty.");
+      if (cats.some((c) => c.name.toLowerCase() === clean))
+        throw new Error("Category already exists.");
+      const row = { id: Math.max(0, ...cats.map((c) => c.id)) + 1, name: clean };
+      cats.push(row);
+      return row;
+    },
+    listUsers: async () => ensureUsers().map(({ username, fullName, role }) => ({ username, fullName, role })),
+    registerUser: async ({ username, password, fullName, role }) => {
+      const users = ensureUsers();
+      if (users.some((x) => x.username.toLowerCase() === username.toLowerCase()))
+        throw new Error("Username already taken. Please choose another.");
+      users.push({ username, password, fullName: fullName || username, role: role === "admin" ? "admin" : "user" });
+      return { username, fullName: fullName || username, role: role === "admin" ? "admin" : "user" };
+    }
+  };
+  const mockAuth = {
+    login: async (username, password) => {
+      await new Promise((r) => setTimeout(r, 400));
+      const u = ensureUsers().find((x) => x.username === username);
+      if (!u) throw new Error("Account not found. Please register first.");
+      if (u.password !== password) throw new Error("Incorrect password. Please try again.");
+      return { username: u.username, fullName: u.fullName, role: u.role, token: "mock-token-" + Date.now() };
+    },
+    register: async (username, password, fullName) => {
+      await new Promise((r) => setTimeout(r, 400));
+      const users = ensureUsers();
+      if (users.some((x) => x.username.toLowerCase() === username.toLowerCase()))
+        throw new Error("Username already taken. Please choose another.");
+      users.push({ username, password, fullName: fullName || username, role: "user" });
+      return { username, fullName: fullName || username, role: "user", token: "mock-token-" + Date.now() };
+    },
+    logout: async () => {},
+    getMe: async () => { const s = getSession(); if (!s) throw new Error("Not logged in"); return s; }
+  };
+
   // In-memory copy of the demo dataset so mutations persist during
   // the current browser session (NOT permanent storage — the Java
   // backend text files remain the real, permanent store).
@@ -424,6 +534,34 @@ const Api = (() => {
   api.isMock = () => API_CONFIG.mode === "mock";
   api.ringgitToSen = ringgitToSen;
   api.senToRinggit = senToRinggit;
+
+  // Auth API — session is kept in sessionStorage (token only, not financial data)
+  api.getSession = getSession;
+  api.saveSession = saveSession;
+  const loginFn = bind(live.login, mockAuth.login);
+  const registerFn = bind(live.register, mockAuth.register);
+  const logoutFn = bind(live.logout, mockAuth.logout);
+  api.login = async (u, p) => {
+    const session = await loginFn(u, p);
+    saveSession(session);
+    return session;
+  };
+  api.register = async (u, p, f) => {
+    const session = await registerFn(u, p, f);
+    saveSession(session);
+    return session;
+  };
+  api.logout = async () => {
+    try { await logoutFn(); } catch (_) { /* best-effort server logout */ }
+    saveSession(null);
+  };
+  api.getMe = bind(live.getMe, mockAuth.getMe);
+
+  // Admin API (role-gated server-side in live mode; mock mirrors Java admin menu)
+  api.listCategories = bind(live.listCategories, mockAdmin.listCategories);
+  api.addCategory = bind(live.addCategory, mockAdmin.addCategory);
+  api.listUsers = bind(live.listUsers, mockAdmin.listUsers);
+  api.registerUser = bind(live.registerUser, mockAdmin.registerUser);
 
   api.getMeta = bind(live.getMeta, mock.getMeta);
   api.getDashboard = bind(live.getDashboard, mock.getDashboard);
