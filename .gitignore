@@ -1,0 +1,25 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# Logs & temp
+*.log
+tmp/
+.scratch/
+
+# Never commit secrets (AI keys live ONLY in the Java backend config)
+.env
+*.key
+config/secrets.*
+
+# Java build output (teammates' side)
+*.class
+*.jar
+out/
+target/
+bin/
