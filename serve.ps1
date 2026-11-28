@@ -1,5 +1,5 @@
 $prefix = "http://localhost:8090/"
-$root = "C:\Users\User\.ilmucode\workspace\default\SmartSpend\frontend"
+$root = Join-Path $PSScriptRoot "frontend"
 $mime = @{
   ".html"="text/html"; ".css"="text/css"; ".js"="text/javascript";
   ".svg"="image/svg+xml"; ".png"="image/png"; ".ico"="image/x-icon"; ".json"="application/json"
