@@ -13,6 +13,11 @@ Legend: ✅ implemented and tested (mock mode) · 🔌 implemented, awaits Java 
 | Session handling (sessionStorage, survives reload) | ✅ COMPLETE AND TESTED | Token only — no financial data stored |
 | Protected navigation (login gate over all pages) | ✅ COMPLETE AND TESTED | |
 | User profile chip (avatar initials, name, role) | ✅ COMPLETE AND TESTED | Student / Administrator roles |
+| Role-based navigation (role-based nav visibility) | ✅ COMPLETE AND TESTED | Admins see only Admin Panel; users never see it |
+| Separate admin dashboard (Admin Panel) | ✅ COMPLETE AND TESTED | Mirrors Menu.adminMenu(): overview, category add/list, user list, register user |
+| Role guards both directions (URL hash access) | ✅ COMPLETE AND TESTED | Users blocked from #/admin; admins redirected from finance pages to Admin Panel |
+| Admin category management UI | ✅ COMPLETE IN MOCK MODE ONLY | Live mode needs `GET|POST /api/categories` (maps to FinanceManager.addCategory) |
+| Admin user list + register-user UI | ✅ COMPLETE IN MOCK MODE ONLY | Live mode needs `GET /api/users` + register (maps to UserStore) |
 | Live JWT/session auth via `Authorization: Bearer` + 401 auto-logout | 🔌 AWAITING JAVA BACKEND INTEGRATION | Needs Member 4 — see AUTHENTICATION_INTEGRATION.md |
 
 ## Core features

@@ -47,3 +47,22 @@ The demo accounts that `UserStore.loadUsers()` creates when `users.txt` is absen
 - Mock mode simulates the exact same session shape and error messages in memory (accounts `ali/1234`, `admin/admin`; new registrations are held in memory only and reset on reload).
 - The yellow "Demo data — not live" chip remains visible in mock mode.
 - Switching to live mode (`api.js` → `mode: "live"`) moves auth to the real endpoints automatically; no UI code changes.
+
+## Update: role-based interface (round 3)
+
+The frontend now renders **two role-specific experiences**, matching the Java console app exactly:
+
+| Frontend | Java counterpart |
+|---|---|
+| Normal user: Dashboard, Income, Expenses, Budgets, Savings, Reports, Alerts, AI Advisor (unchanged) | `Menu.isNormalUser()` — admins are blocked from personal finance actions |
+| Admin: **Admin Panel** only — overview counts, expense category add/list, registered-user list, register-user form | `Menu.adminMenu()` — add/view categories (`FinanceManager.addCategory`, `getCategories`), view users + register (`UserStore.displayAll`, `register`) |
+| Nav visibility: finance links hidden for admins; Admin Panel link hidden for users | Role comes from the login session (`role: "admin"` when `instanceof Admin`) |
+| URL guards: `#/admin` requires admin; finance pages redirect admins to the panel | Same intent as the console guards |
+
+**Additional live endpoints needed from Member 4** (frontend calls exist, mock implementations in place):
+
+- `GET /api/categories` → category list (`FinanceManager.getCategories()`)
+- `POST /api/categories` `{ "name": "..." }` → `FinanceManager.addCategory(name)` (reject duplicates)
+- `GET /api/users` → registered users (`username`, `fullName`, `role`) — admin only
+
+Note: mock admin features (categories/users) are demonstration data in memory only. Mock authentication is **not** real Java authentication — all verification happens in Java only after Member 4's HTTP layer exists.

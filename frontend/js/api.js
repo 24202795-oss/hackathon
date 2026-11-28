@@ -97,6 +97,15 @@ const Api = (() => {
     register: (username, password, fullName) => request("POST", "/api/auth/register", { username, password, fullName }),
     logout: () => request("POST", "/api/auth/logout"),
     getMe: () => request("GET", "/api/auth/me"),
+    // Admin capabilities — map 1:1 to the existing Java admin menu:
+    //   listCategories -> FinanceManager.getCategories()/getCategoryCount()
+    //   addCategory    -> FinanceManager.addCategory(name)
+    //   listUsers      -> UserStore users array (username|fullName|role)
+    //   registerUser   -> UserStore.register(username, password, fullName, asAdmin)
+    listCategories: () => request("GET", "/api/categories"),
+    addCategory: (name) => request("POST", "/api/categories", { name }),
+    listUsers: () => request("GET", "/api/users"),
+    registerUser: (u) => request("POST", "/api/auth/register", u),
     getMeta: () => request("GET", "/api/meta"),
     getDashboard: () => request("GET", "/api/dashboard"),
     listIncome: (filters) => request("GET", `/api/income${qs(filters)}`),
@@ -142,6 +151,40 @@ const Api = (() => {
     }
     return mockUsers;
   }
+  // Mock expense categories mirror FinanceManager's default categories
+  let mockCategories = null;
+  function ensureCategories() {
+    if (!mockCategories) {
+      mockCategories = [
+        { id: 1, name: "food" }, { id: 2, name: "transport" },
+        { id: 3, name: "education" }, { id: 4, name: "accommodation" },
+        { id: 5, name: "shopping" }, { id: 6, name: "entertainment" },
+        { id: 7, name: "healthcare" }, { id: 8, name: "utilities" }, { id: 9, name: "other" }
+      ];
+    }
+    return mockCategories;
+  }
+  const mockAdmin = {
+    listCategories: async () => ensureCategories().slice(),
+    addCategory: async (name) => {
+      const cats = ensureCategories();
+      const clean = (name || "").trim().toLowerCase();
+      if (!clean) throw new Error("Category name cannot be empty.");
+      if (cats.some((c) => c.name.toLowerCase() === clean))
+        throw new Error("Category already exists.");
+      const row = { id: Math.max(0, ...cats.map((c) => c.id)) + 1, name: clean };
+      cats.push(row);
+      return row;
+    },
+    listUsers: async () => ensureUsers().map(({ username, fullName, role }) => ({ username, fullName, role })),
+    registerUser: async ({ username, password, fullName, role }) => {
+      const users = ensureUsers();
+      if (users.some((x) => x.username.toLowerCase() === username.toLowerCase()))
+        throw new Error("Username already taken. Please choose another.");
+      users.push({ username, password, fullName: fullName || username, role: role === "admin" ? "admin" : "user" });
+      return { username, fullName: fullName || username, role: role === "admin" ? "admin" : "user" };
+    }
+  };
   const mockAuth = {
     login: async (username, password) => {
       await new Promise((r) => setTimeout(r, 400));
@@ -513,6 +556,12 @@ const Api = (() => {
     saveSession(null);
   };
   api.getMe = bind(live.getMe, mockAuth.getMe);
+
+  // Admin API (role-gated server-side in live mode; mock mirrors Java admin menu)
+  api.listCategories = bind(live.listCategories, mockAdmin.listCategories);
+  api.addCategory = bind(live.addCategory, mockAdmin.addCategory);
+  api.listUsers = bind(live.listUsers, mockAdmin.listUsers);
+  api.registerUser = bind(live.registerUser, mockAdmin.registerUser);
 
   api.getMeta = bind(live.getMeta, mock.getMeta);
   api.getDashboard = bind(live.getDashboard, mock.getDashboard);

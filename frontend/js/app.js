@@ -11,12 +11,14 @@
   "use strict";
 
   // ---------- constants ----------
-  const PAGES = ["dashboard", "income", "expenses", "budgets", "savings", "reports", "alerts", "advisor"];
+  const PAGES = ["dashboard", "income", "expenses", "budgets", "savings", "reports", "alerts", "advisor", "admin"];
   const TITLES = {
     dashboard: "Dashboard", income: "Income", expenses: "Expenses",
     budgets: "Budgets", savings: "Savings Goals", reports: "Financial Reports",
-    alerts: "Budget Alerts", advisor: "AI Financial Advisor"
+    alerts: "Budget Alerts", advisor: "AI Financial Advisor", admin: "Admin Panel"
   };
+  // Pages a normal user may open (admin panel is role-gated separately)
+  const USER_PAGES = ["dashboard", "income", "expenses", "budgets", "savings", "reports", "alerts", "advisor"];
   const STATUS_LABEL = { within: "Within budget", approaching: "Approaching limit", reached: "Limit reached", exceeded: "Exceeded" };
   const STATUS_CLASS = { within: "status-green", approaching: "status-yellow", reached: "status-orange", exceeded: "status-red" };
 
@@ -111,12 +113,34 @@
   // ---------- routing ----------
   function navigate(page) {
     if (!PAGES.includes(page)) page = "dashboard";
+    // Role-based navigation guards, mirroring the Java console app:
+    // - Menu.adminMenu() requires `instanceof Admin` for the admin panel
+    // - Menu.isNormalUser() blocks admins from personal finance actions
+    const session = Api.getSession();
+    const isAdmin = session && session.role === "admin";
+    if (page === "admin" && !isAdmin) page = "dashboard";
+    if (isAdmin && USER_PAGES.includes(page)) page = "admin";
+    // keep the URL hash in sync with the page actually displayed
+    const expectedHash = "#/" + page;
+    if (location.hash !== expectedHash) {
+      history.replaceState(null, "", expectedHash);
+    }
     $$(".page").forEach((p) => { p.hidden = p.id !== `page-${page}`; });
     $$(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.page === page));
     $("#pageTitle").textContent = TITLES[page];
     closeSidebar();
     window.scrollTo(0, 0);
     loadPage(page);
+  }
+
+  // Show/hide role-specific navigation (Admin Panel link)
+  function applyRoleVisibility() {
+    const session = Api.getSession();
+    const isAdmin = !!(session && session.role === "admin");
+    $$(".nav-item.admin-only").forEach((n) => { n.hidden = !isAdmin; });
+    // Admins manage the system, not personal finances — hide user-finance
+    // pages for them, exactly like Menu.isNormalUser() blocks admins in Java.
+    $$(".nav-item:not(.admin-only)").forEach((n) => { n.hidden = isAdmin; });
   }
   window.addEventListener("hashchange", () => navigate(location.hash.replace("#/", "")));
 
@@ -177,10 +201,87 @@
     const safe = {
       dashboard: loadDashboard, income: loadIncome, expenses: loadExpenses,
       budgets: loadBudgets, savings: loadSavings, reports: loadReports,
-      alerts: loadAlerts, advisor: initChat
+      alerts: loadAlerts, advisor: initChat, admin: loadAdmin
     };
     (safe[page] || (() => {}))();
   }
+
+  // ---------- ADMIN PANEL (role: admin) ----------
+  async function loadAdmin() {
+    setLoading($("#adminOverview"), 2);
+    setLoading($("#adminCategoryList"), 3);
+    setLoading($("#adminUserList"), 3);
+    try {
+      const [cats, users] = await Promise.all([Api.listCategories(), Api.listUsers()]);
+      renderAdmin(cats, users);
+    } catch (err) {
+      renderError($("#adminOverview"), err, loadAdmin);
+    }
+  }
+
+  function renderAdmin(cats, users) {
+    const session = Api.getSession();
+    const admins = users.filter((u) => u.role === "admin").length;
+    $("#adminOverview").innerHTML = `
+      <div class="stat-list">
+        <div class="stat-row"><span>Registered users</span><span class="s-val">${users.length}</span></div>
+        <div class="stat-row"><span>Administrators</span><span class="s-val">${admins}</span></div>
+        <div class="stat-row"><span>Expense categories</span><span class="s-val">${cats.length}</span></div>
+        <div class="stat-row"><span>Signed in as</span><span class="s-val">${esc(session.fullName || session.username)} (${esc(session.role)})</span></div>
+      </div>
+      <p class="muted" style="font-size:.82rem; margin:10px 0 0;">
+        This panel mirrors the console app's admin menu (add/view categories, view users, register users).
+        In live mode these lists come from Java via <code>/api/categories</code> and <code>/api/users</code>.
+      </p>`;
+
+    $("#adminCategoryList").innerHTML = cats.length
+      ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Category name</th></tr></thead><tbody>
+          ${cats.map((c, i) => `<tr><td>${i + 1}</td><td><span class="chip cat-chip">${esc(c.name)}</span></td></tr>`).join("")}
+        </tbody></table></div>`
+      : emptyState("🏷️", "No categories", "Add the first expense category above.");
+
+    $("#adminUserList").innerHTML = users.length
+      ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>Username</th><th>Full name</th><th>Role</th></tr></thead><tbody>
+          ${users.map((u) => `<tr><td><strong>${esc(u.username)}</strong></td><td>${esc(u.fullName)}</td>
+            <td>${u.role === "admin" ? '<span class="chip type-chip-discretionary">Admin</span>' : '<span class="chip type-chip-essential">User</span>'}</td></tr>`).join("")}
+        </tbody></table></div>`
+      : emptyState("👥", "No users", "Register a user below.");
+  }
+
+  $("#adminCategoryForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = $("#adminCategoryName");
+    try {
+      await Api.addCategory(input.value);
+      toast("Category added (sent to Java in live mode)", "success");
+      input.value = "";
+      loadAdmin();
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  });
+
+  $("#adminRegisterForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearFormError("adminRegister");
+    const form = e.target;
+    if (!form.fullName.value.trim()) return showFormError("adminRegister", "Please enter a full name.");
+    if (!form.username.value.trim()) return showFormError("adminRegister", "Please enter a username.");
+    if (form.password.value.length < 4) return showFormError("adminRegister", "Password must be at least 4 characters.");
+    try {
+      await Api.registerUser({
+        username: form.username.value.trim(),
+        password: form.password.value,
+        fullName: form.fullName.value.trim(),
+        role: form.role.value
+      });
+      toast(`User "${form.username.value.trim()}" registered`, "success");
+      form.reset();
+      loadAdmin();
+    } catch (err) {
+      showFormError("adminRegister", err.message);
+    }
+  });
 
   // ---------- DASHBOARD ----------
   async function loadDashboard() {
@@ -1019,6 +1120,7 @@
       $("#userRole").textContent = session.role === "admin" ? "Administrator" : "Student";
       document.querySelector(".avatar").textContent = initials;
     }
+    applyRoleVisibility();
   }
 
   function switchAuthTab(login) {
@@ -1102,6 +1204,13 @@
   function startApp(session) {
     renderUserChip(session);
     showAuth(false);
+    // Role-based landing page: admins land on the Admin Panel,
+    // normal users on their Dashboard.
+    const landing = session.role === "admin" ? "admin" : "dashboard";
+    if (!location.hash || location.hash === "#/" || location.hash === `#/${landing}`) {
+      location.hash = `#/${landing}`;
+    }
+    navigate(location.hash.replace("#/", "") || landing);
     init();
   }
 
@@ -1115,6 +1224,8 @@
     }
     renderUserChip(session);
     showAuth(false);
+    // Admins skip personal-finance data loading entirely
+    if (session.role === "admin") return;
     try {
       state.meta = await Api.getMeta();
     } catch (err) {
@@ -1150,10 +1261,13 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     // Auth gate runs first: without a session only the login screen shows.
-    if (!Api.getSession()) {
+    const session = Api.getSession();
+    if (!session) {
       showAuth(true);
       return;
     }
+    renderUserChip(session);
+    showAuth(false);
     init();
   });
 })();

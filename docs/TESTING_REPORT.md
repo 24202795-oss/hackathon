@@ -46,3 +46,22 @@ Served via: local HTTP server (PowerShell `serve.ps1`, port 8090) · Mode: **moc
 ## How to re-run the tests
 
 Serve `frontend/` (e.g. `powershell -File serve.ps1`), open `http://localhost:8090`, and walk through: login gate → invalid login → login ali/1234 → all 8 pages → add/edit/delete a record → filters → AI chat → logout → register a new account → reload (session persists) → resize to mobile width.
+
+## Round 3 — role-based interface tests (28 November 2026, later session)
+
+| # | Test | Result |
+|---|---|---|
+| 21 | Admin login (admin/admin) → lands on Admin Panel, chip shows "Administrator" | ✅ Pass |
+| 22 | Role-based nav: admin sees only Admin Panel link (finance pages hidden); user sees finance pages (Admin link hidden) | ✅ Pass |
+| 23 | Admin Panel renders: overview counts (users/admins/categories), category table (9 default categories), user table (ali + admin) | ✅ Pass |
+| 24 | Admin adds category "groceries" → appears in table | ✅ Pass |
+| 25 | Duplicate category "GROCERIES" → "Category already exists." error toast | ✅ Pass |
+| 26 | Admin registers user "saralim" via panel → appears in user list as User role | ✅ Pass |
+| 27 | Guard: user (ali) opening #/admin → redirected to #/dashboard, admin page not visible | ✅ Pass (after fix, see bug #5) |
+| 28 | Guard: admin opening #/income → redirected to #/admin, income page not visible | ✅ Pass (after fix) |
+| 29 | URL hash stays in sync with the page actually displayed after redirects | ✅ Pass (after fix) |
+| 30 | User-role regression: all 8 user pages + AI chat still work after role changes | ✅ Pass |
+
+### Bug found and fixed in round 3
+
+5. **Role guards didn't cover URL-hash access** — a user could open `#/admin` directly (blank admin page) and an admin could open `#/income`. Fixed in `navigate()`: admins are redirected from any finance page to the Admin Panel, users from the Admin Panel to the Dashboard, and `history.replaceState` keeps the URL hash consistent with the displayed page.
