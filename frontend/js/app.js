@@ -136,6 +136,13 @@
     container.innerHTML = Array.from({ length: rows }, () => `<div class="skeleton"></div>`).join("");
   }
   function renderError(container, err, retry) {
+    // Session expired (live mode 401): return to the login screen
+    if (err.status === 401 && !Api.getSession()) {
+      renderUserChip(null);
+      showAuth(true);
+      switchAuthTab(true);
+      return;
+    }
     container.innerHTML = `
       <div class="error-banner">
         <span>⚠️ ${esc(err.message || "Something went wrong")}</span>
@@ -991,8 +998,123 @@
     body.scrollTop = body.scrollHeight;
   }
 
+  // ---------- AUTHENTICATION ----------
+  function showAuth(show) {
+    $("#authScreen").hidden = !show;
+    $("#sidebar").style.display = show ? "none" : "";
+    $(".topbar").style.display = show ? "none" : "";
+    // hide page content while logging in
+    $$(".page").forEach((p) => { if (show) p.hidden = true; });
+  }
+
+  function renderUserChip(session) {
+    const chip = $("#userChip"), logout = $("#logoutBtn");
+    chip.hidden = !session;
+    logout.hidden = !session;
+    if (session) {
+      const initials = (session.fullName || session.username || "?")
+        .split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+      $("#userAvatar").textContent = initials;
+      $("#userFullName").textContent = session.fullName || session.username;
+      $("#userRole").textContent = session.role === "admin" ? "Administrator" : "Student";
+      document.querySelector(".avatar").textContent = initials;
+    }
+  }
+
+  function switchAuthTab(login) {
+    $("#tabLogin").classList.toggle("active", login);
+    $("#tabRegister").classList.toggle("active", !login);
+    $("#tabLogin").setAttribute("aria-selected", String(login));
+    $("#tabRegister").setAttribute("aria-selected", String(!login));
+    $("#loginForm").hidden = !login;
+    $("#registerForm").hidden = login;
+  }
+  $("#tabLogin").addEventListener("click", () => switchAuthTab(true));
+  $("#tabRegister").addEventListener("click", () => switchAuthTab(false));
+
+  // show/hide password toggles
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-toggle-pw]");
+    if (!t) return;
+    const scope = document.getElementById(t.getAttribute("data-toggle-pw"));
+    const input = scope.querySelector(".pw-row input");
+    const isPw = input.type === "password";
+    input.type = isPw ? "text" : "password";
+    t.setAttribute("aria-label", isPw ? "Hide password" : "Show password");
+    t.textContent = isPw ? "🙈" : "👁️";
+  });
+
+  function authError(form, message) {
+    const elErr = $(`#${form}Error`);
+    if (elErr) { elErr.textContent = message; elErr.hidden = false; }
+  }
+
+  $("#loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearFormError("loginForm");
+    const form = e.target;
+    if (!form.username.value.trim()) return authError("loginForm", "Please enter your username.");
+    if (!form.password.value) return authError("loginForm", "Please enter your password.");
+    const btn = form.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Logging in…";
+    try {
+      const session = await Api.login(form.username.value.trim(), form.password.value);
+      form.reset();
+      startApp(session);
+      toast(`Welcome back, ${session.fullName || session.username}!`, "success");
+    } catch (err) {
+      authError("loginForm", err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = "Log in";
+    }
+  });
+
+  $("#registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearFormError("registerForm");
+    const form = e.target;
+    if (!form.fullName.value.trim()) return authError("registerForm", "Please enter your full name.");
+    if (!form.username.value.trim()) return authError("registerForm", "Please choose a username.");
+    if (form.password.value.length < 4) return authError("registerForm", "Password must be at least 4 characters.");
+    if (form.password.value !== form.password2.value) return authError("registerForm", "Passwords do not match.");
+    const btn = form.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Creating account…";
+    try {
+      const session = await Api.register(form.username.value.trim(), form.password.value, form.fullName.value.trim());
+      form.reset();
+      startApp(session);
+      toast(`Account created — welcome, ${session.fullName}!`, "success");
+    } catch (err) {
+      authError("registerForm", err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = "Create account";
+    }
+  });
+
+  $("#logoutBtn").addEventListener("click", async () => {
+    await Api.logout();
+    renderUserChip(null);
+    showAuth(true);
+    switchAuthTab(true);
+    toast("You have been logged out.");
+  });
+
+  function startApp(session) {
+    renderUserChip(session);
+    showAuth(false);
+    init();
+  }
+
   // ---------- INIT ----------
   async function init() {
+    // Protected navigation: no session -> show login screen
+    const session = Api.getSession();
+    if (!session) {
+      showAuth(true);
+      return;
+    }
+    renderUserChip(session);
+    showAuth(false);
     try {
       state.meta = await Api.getMeta();
     } catch (err) {
@@ -1026,5 +1148,12 @@
     navigate(PAGES.includes(initial) ? initial : "dashboard");
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => {
+    // Auth gate runs first: without a session only the login screen shows.
+    if (!Api.getSession()) {
+      showAuth(true);
+      return;
+    }
+    init();
+  });
 })();
