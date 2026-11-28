@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # NetBeans build output
 build/
 dist/
@@ -5,13 +6,12 @@ nbproject/private/
 nbproject/build-impl.xml
 nbproject/genfiles.properties
 
-# Compiled classes / archives
+# Compiled classes
 *.class
-*.jar
-out/
-target/
-bin/
 
+# Java runtime files
+*.log
+=======
 # OS / editor junk
 .DS_Store
 Thumbs.db
@@ -24,8 +24,17 @@ desktop.ini
 # Logs & temp
 *.log
 tmp/
+.scratch/
 
 # Never commit secrets (AI keys live ONLY in the Java backend config)
 .env
 *.key
 config/secrets.*
+
+# Java build output (teammates' side)
+*.class
+*.jar
+out/
+target/
+bin/
+>>>>>>> jiaxin/main
