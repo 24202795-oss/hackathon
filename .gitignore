@@ -5,8 +5,27 @@ nbproject/private/
 nbproject/build-impl.xml
 nbproject/genfiles.properties
 
-# Compiled classes
+# Compiled classes / archives
 *.class
+*.jar
+out/
+target/
+bin/
 
-# Java runtime files
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# Logs & temp
 *.log
+tmp/
+
+# Never commit secrets (AI keys live ONLY in the Java backend config)
+.env
+*.key
+config/secrets.*
